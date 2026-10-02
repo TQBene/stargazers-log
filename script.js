@@ -2,9 +2,30 @@ const list = document.querySelector("#starred");
 const status = document.querySelector("#status");
 const search = document.querySelector("#search");
 
-let repos = [];
+const STATUS_DELAY_MS = 400;
+const FETCH_TIMEOUT_MS = 10000;
 
-function render() {
+let repos = [];
+let statusTimer;
+
+function repositories(count) {
+  return count === 1 ? "repository" : "repositories";
+}
+
+function statusText(query, matchCount) {
+  if (!repos.length) {
+    return "No starred repositories yet.";
+  }
+  if (!query) {
+    return `${repos.length} starred ${repositories(repos.length)} loaded.`;
+  }
+  if (matchCount) {
+    return `Showing ${matchCount} of ${repos.length} ${repositories(repos.length)}.`;
+  }
+  return `No repositories match "${search.value.trim()}".`;
+}
+
+function render({ announceNow = false } = {}) {
   const query = search.value.trim().toLowerCase();
   const matches = repos.filter((event) => event.name.toLowerCase().includes(query));
 
@@ -15,19 +36,21 @@ function render() {
     list.appendChild(item);
   });
 
-  if (!repos.length) {
-    status.textContent = "No starred repositories yet.";
-  } else if (!query) {
-    status.textContent = `${repos.length} starred repositories loaded.`;
-  } else if (matches.length) {
-    status.textContent = `Showing ${matches.length} of ${repos.length} repositories.`;
+  // Update the live region only once typing pauses, so screen readers
+  // announce the result instead of every keystroke.
+  clearTimeout(statusTimer);
+  const text = statusText(query, matches.length);
+  if (announceNow) {
+    status.textContent = text;
   } else {
-    status.textContent = `No repositories match "${search.value.trim()}".`;
+    statusTimer = setTimeout(() => {
+      status.textContent = text;
+    }, STATUS_DELAY_MS);
   }
 }
 
 if (list && status && search) {
-  fetch("events.json")
+  fetch("events.json", { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) })
     .then((response) => {
       if (!response.ok) {
         throw new Error(`HTTP ${response.status} ${response.statusText}`);
@@ -38,13 +61,16 @@ if (list && status && search) {
       if (!Array.isArray(events)) {
         throw new Error("events.json is not a list");
       }
-      repos = events.filter((event) => event && typeof event.name === "string" && event.starred);
+      repos = events.filter(
+        (event) => event && typeof event.name === "string" && typeof event.starred === "string"
+      );
       search.disabled = false;
-      search.addEventListener("input", render);
-      render();
+      search.addEventListener("input", () => render());
+      render({ announceNow: true });
     })
     .catch((error) => {
-      status.textContent = `Could not load starred repositories (${error.message}).`;
+      const reason = error.name === "TimeoutError" ? "the request timed out" : error.message;
+      status.textContent = `Could not load starred repositories (${reason}).`;
       console.error(error);
     });
 } else {
