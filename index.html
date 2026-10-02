@@ -10,7 +10,10 @@
     <h1>Stargazers log</h1>
     <p>A log of the repositories I've starred.</p>
     <h2 id="starred-heading">Starred repositories</h2>
+    <label for="search">Search repositories</label>
+    <input type="search" id="search" placeholder="e.g. octocat" autocomplete="off" disabled>
     <p id="status" role="status">Loading starred repositories…</p>
+    <noscript><p>This list needs JavaScript. Please enable it to see the starred repositories.</p></noscript>
     <ul id="starred" role="list" aria-labelledby="starred-heading"></ul>
     <script src="script.js"></script>
   </body>
