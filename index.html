@@ -1,11 +1,19 @@
 <!DOCTYPE html>
-<html lang= "en" >
+<html lang="en">
   <head>
     <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Stargazers log</title>
+    <link rel="stylesheet" href="style.css">
   </head>
   <body>
     <h1>Stargazers log</h1>
-    <p>A log of the repositories I´ve starred.</p>
+    <p>A log of the repositories I've starred.</p>
+    <h2 id="starred-heading">Starred repositories</h2>
+    <label for="search">Search repositories</label>
+    <input type="search" id="search" placeholder="e.g. octocat" autocomplete="off" disabled>
+    <p id="status" role="status">Loading starred repositories…</p>
+    <ul id="starred" role="list" aria-labelledby="starred-heading"></ul>
+    <script src="script.js"></script>
   </body>
 </html>

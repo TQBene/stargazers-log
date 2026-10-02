@@ -1,0 +1,29 @@
+body {
+  font-family: sans-serif;
+  margin: 2rem;
+}
+
+label {
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+input[type="search"] {
+  width: 100%;
+  max-width: 24rem;
+  padding: 0.4rem 0.5rem;
+  font: inherit;
+  border: 1px solid #767676;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+ul {
+  list-style: none;
+  padding: 0;
+}
+
+li {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #ddd;
+}
