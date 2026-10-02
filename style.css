@@ -3,14 +3,26 @@ body {
   margin: 2rem;
 }
 
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: flex-end;
+}
+
+.controls > div {
+  flex: 1 1 12rem;
+  max-width: 24rem;
+}
+
 label {
   display: block;
   margin-bottom: 0.25rem;
 }
 
-input[type="search"] {
+input[type="search"],
+select {
   width: 100%;
-  max-width: 24rem;
   padding: 0.4rem 0.5rem;
   font: inherit;
   border: 1px solid #767676;

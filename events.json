@@ -1,5 +1,9 @@
 [
   { "name": "octocat/Hello-World", "starred": "2024-01-15" },
-  { "name": "github/docs", "starred": "2024-02-02" },
-  { "name": "octo-org/octo-repo", "starred": "2024-03-21" }
+  { "name": "github/docs", "language": "JavaScript", "starred": "2024-02-02" },
+  { "name": "octo-org/octo-repo", "language": "Ruby", "starred": "2024-03-21" },
+  { "name": "microsoft/vscode", "language": "TypeScript", "starred": "2024-04-08" },
+  { "name": "python/cpython", "language": "Python", "starred": "2024-05-19" },
+  { "name": "psf/requests", "language": "Python", "starred": "2024-06-03" },
+  { "name": "torvalds/linux", "language": "C", "starred": "2024-07-27" }
 ]
