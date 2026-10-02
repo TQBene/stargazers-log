@@ -32,7 +32,8 @@ function fillLanguageOptions() {
       const count = repos.filter((repo) => repo.language === language).length;
       const option = document.createElement("option");
       option.value = language;
-      option.textContent = `${language} (${count})`;
+      // "Python, 2 repositories" rather than "Python (2)", which screen readers read as "Python 2".
+      option.textContent = `${language}, ${count} ${repositories(count)}`;
       languageSelect.appendChild(option);
     });
 }
@@ -47,10 +48,25 @@ function statusText(query, language, matchCount) {
   if (matchCount) {
     return `Showing ${matchCount} of ${repos.length} ${repositories(repos.length)}.`;
   }
-  const filters = [];
-  if (query) filters.push(`"${search.value.trim()}"`);
-  if (language) filters.push(`language ${language}`);
-  return `No repositories match ${filters.join(" and ")}.`;
+  let scope = "repositories";
+  if (language === NO_LANGUAGE) {
+    scope = "repositories without a language";
+  } else if (language) {
+    scope = `${language} repositories`;
+  }
+  return query ? `No ${scope} match "${search.value.trim()}".` : `No ${scope} found.`;
+}
+
+// Use one spelling per language, so "Python" and "python" end up in the same group.
+function normalizeLanguages(items) {
+  const spellings = new Map();
+  return items.map((item) => {
+    const key = item.language.toLowerCase();
+    if (!spellings.has(key)) {
+      spellings.set(key, item.language);
+    }
+    return { ...item, language: spellings.get(key) };
+  });
 }
 
 function render({ announceNow = false } = {}) {
@@ -93,11 +109,16 @@ if (list && status && search && languageSelect) {
       if (!Array.isArray(events)) {
         throw new Error("events.json is not a list");
       }
-      repos = events
-        .filter(
-          (event) => event && typeof event.name === "string" && typeof event.starred === "string"
-        )
-        .map((event) => ({
+      const valid = events.filter(
+        (event) => event && typeof event.name === "string" && typeof event.starred === "string"
+      );
+      if (valid.length < events.length) {
+        console.warn(
+          `events.json: skipped ${events.length - valid.length} entries without a text "name" and "starred" field.`
+        );
+      }
+      repos = normalizeLanguages(
+        valid.map((event) => ({
           name: event.name,
           starred: event.starred,
           language:
@@ -105,14 +126,15 @@ if (list && status && search && languageSelect) {
               ? event.language.trim()
               : NO_LANGUAGE,
         }))
-        .sort(byLanguageThenName);
+      ).sort(byLanguageThenName);
 
       fillLanguageOptions();
       search.disabled = false;
       languageSelect.disabled = false;
       search.addEventListener("input", () => render());
-      // A dropdown choice is a single deliberate action, so announce it right away.
-      languageSelect.addEventListener("change", () => render({ announceNow: true }));
+      // Arrow keys on a closed dropdown fire "change" for every option in Chrome and
+      // Edge on Windows, so the status waits for a pause here too.
+      languageSelect.addEventListener("change", () => render());
       render({ announceNow: true });
     })
     .catch((error) => {
