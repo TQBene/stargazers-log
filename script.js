@@ -57,6 +57,71 @@ function statusText(query, language, matchCount) {
   return query ? `No ${scope} match "${search.value.trim()}".` : `No ${scope} found.`;
 }
 
+const dateFormat = new Intl.DateTimeFormat("en-GB", {
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+  timeZone: "UTC",
+});
+
+// "2024-05-19" becomes <time datetime="2024-05-19">19 May 2024</time>.
+// Anything that isn't a valid YYYY-MM-DD date is shown as it is. The round-trip
+// check catches impossible dates like 2024-02-30, which some browsers roll over
+// to 1 March instead of rejecting.
+function createDate(value) {
+  const date = new Date(`${value}T00:00:00Z`);
+  if (
+    !/^\d{4}-\d{2}-\d{2}$/.test(value) ||
+    Number.isNaN(date.getTime()) ||
+    date.toISOString().slice(0, 10) !== value
+  ) {
+    return document.createTextNode(value);
+  }
+  const time = document.createElement("time");
+  time.dateTime = value;
+  time.textContent = dateFormat.format(date);
+  return time;
+}
+
+// Names in "owner/repo" form link to GitHub; anything else stays plain text.
+function createName(name) {
+  if (!/^[\w.-]+\/[\w.-]+$/.test(name)) {
+    const span = document.createElement("span");
+    span.className = "repo-name";
+    span.textContent = name;
+    return span;
+  }
+  const link = document.createElement("a");
+  link.className = "repo-name";
+  link.href = `https://github.com/${name}`;
+  link.textContent = name;
+  return link;
+}
+
+function createItem(repo) {
+  const item = document.createElement("li");
+
+  const meta = document.createElement("div");
+  meta.className = "repo-meta";
+  // Sighted users see "Python · Starred …"; screen readers hear "Python, Starred …".
+  const separator = document.createElement("span");
+  separator.setAttribute("aria-hidden", "true");
+  separator.textContent = " · ";
+  const spokenSeparator = document.createElement("span");
+  spokenSeparator.className = "visually-hidden";
+  spokenSeparator.textContent = ", ";
+  meta.append(
+    repo.language,
+    separator,
+    spokenSeparator,
+    "Starred ",
+    createDate(repo.starred)
+  );
+
+  item.append(createName(repo.name), meta);
+  return item;
+}
+
 // Use one spelling per language, so "Python" and "python" end up in the same group.
 function normalizeLanguages(items) {
   const spellings = new Map();
@@ -77,12 +142,7 @@ function render({ announceNow = false } = {}) {
       repo.name.toLowerCase().includes(query) && (!language || repo.language === language)
   );
 
-  list.replaceChildren();
-  matches.forEach((repo) => {
-    const item = document.createElement("li");
-    item.textContent = `${repo.name} — ${repo.language} — starred ${repo.starred}`;
-    list.appendChild(item);
-  });
+  list.replaceChildren(...matches.map(createItem));
 
   // Update the live region only once typing pauses, so screen readers
   // announce the result instead of every keystroke.
