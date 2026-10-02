@@ -65,10 +65,16 @@ const dateFormat = new Intl.DateTimeFormat("en-GB", {
 });
 
 // "2024-05-19" becomes <time datetime="2024-05-19">19 May 2024</time>.
-// Anything that isn't a valid YYYY-MM-DD date is shown as it is.
+// Anything that isn't a valid YYYY-MM-DD date is shown as it is. The round-trip
+// check catches impossible dates like 2024-02-30, which some browsers roll over
+// to 1 March instead of rejecting.
 function createDate(value) {
-  const date = new Date(value);
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value) || Number.isNaN(date.getTime())) {
+  const date = new Date(`${value}T00:00:00Z`);
+  if (
+    !/^\d{4}-\d{2}-\d{2}$/.test(value) ||
+    Number.isNaN(date.getTime()) ||
+    date.toISOString().slice(0, 10) !== value
+  ) {
     return document.createTextNode(value);
   }
   const time = document.createElement("time");
@@ -97,10 +103,20 @@ function createItem(repo) {
 
   const meta = document.createElement("div");
   meta.className = "repo-meta";
+  // Sighted users see "Python · Starred …"; screen readers hear "Python, Starred …".
   const separator = document.createElement("span");
   separator.setAttribute("aria-hidden", "true");
   separator.textContent = " · ";
-  meta.append(repo.language, separator, "Starred ", createDate(repo.starred));
+  const spokenSeparator = document.createElement("span");
+  spokenSeparator.className = "visually-hidden";
+  spokenSeparator.textContent = ", ";
+  meta.append(
+    repo.language,
+    separator,
+    spokenSeparator,
+    "Starred ",
+    createDate(repo.starred)
+  );
 
   item.append(createName(repo.name), meta);
   return item;
